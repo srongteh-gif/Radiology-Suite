@@ -1,0 +1,19 @@
+{
+  "name": "Radiology Decision Suite",
+  "short_name": "RadSuite",
+  "description": "ACR · Fleischner · TI-RADS · LI-RADS · CAD-RADS · Lung-RADS · Kyoto 2024",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060d18",
+  "theme_color": "#06b6d4",
+  "orientation": "any",
+  "categories": ["medical", "health"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMDYwZDE4Ii8+PHJlY3QgeD0iNiIgeT0iNiIgd2lkdGg9Ijg4IiBoZWlnaHQ9Ijg4IiByeD0iMTQiIGZpbGw9IiMwZDFiMmUiLz48dGV4dCB4PSI1MCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iNDIiIGZpbGw9IiMwNmI2ZDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkR4PC90ZXh0Pjx0ZXh0IHg9IjUwIiB5PSI3OSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDUwNzUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlJBRFM8L3RleHQ+PC9zdmc+",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
