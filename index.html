@@ -198,17 +198,50 @@ function cRenal(i){
   return{rec:r.rec,rat:r.rat,lvl:r.lvl,fu:r.fu,malignancyRisk:rm[i.bosniak],ref:'ACR Bosniak v2019 — Radiology 292(2):475'};
 }
 function cLiver(i){
-  var sz=parseFloat(i.size);if(!i.lesionType)return null;
-  if(i.malignancy==='yes')return{rec:'Use ACR LI-RADS (this tool: incidental findings only)',rat:'Known malignancy/cirrhosis: apply LI-RADS v2018.',lvl:'mod',fu:['Apply ACR LI-RADS v2018'],ref:'ACR LI-RADS v2018'};
-  var c={cyst:{rec:'Simple hepatic cyst — no follow-up',rat:'Benign. No follow-up if anechoic, thin wall, posterior acoustic enhancement.',lvl:'low',fu:[]},hemangioma:(!isNaN(sz)&&sz<1.5)?{rec:'Small haemangioma — no follow-up',rat:'<1.5cm with typical features: no follow-up.',lvl:'low',fu:[]}:{rec:'MRI liver for characterisation (once)',rat:'Larger haemangioma: single MRI for confirmation.',lvl:'low',fu:['MRI liver with hepatobiliary contrast (once)']},fnh:{rec:'FNH — no follow-up if MRI confident',rat:'FNH is benign. Classic MRI: arterial hyperenhancement, portal isointensity, central scar.',lvl:'low',fu:['Advise: OCP associated with small growth risk in women']},indeterminate:(!isNaN(sz)&&sz<1)?{rec:'MRI liver at 6 months; discharge if stable',rat:'Indeterminate <1cm: MRI at 6 months.',lvl:'mod',fu:['MRI liver: 6 months','Discharge if benign']}:{rec:'MRI liver; MDT if indeterminate',rat:'Indeterminate ≥1cm: dedicated MRI required.',lvl:'mod',fu:['MRI liver with hepatobiliary contrast','MDT if indeterminate','Consider biopsy']}};
-  var r=c[i.lesionType];
-  return{rec:r.rec,rat:r.rat,lvl:r.lvl,fu:r.fu,ref:'ACR Incidental Findings WP – Liver — JACR 2017;14(1):86'};
+  if(!i.risk) return null;
+  var REF='ACR Incidental Liver Lesions WP — JACR 2017;14(11):1429';
+  if(i.risk==='hcc') return {rec:'Use ACR LI-RADS — this algorithm applies to low/moderate-risk patients only',rat:'Cirrhosis, chronic HBV, or prior HCC: apply ACR LI-RADS v2018 for all hepatic observations.',lvl:'mod',fu:['See LI-RADS tab for HCC-risk patients'],ref:'ACR LI-RADS v2018'};
+  if(!i.lesion) return null;
+  var sz=parseFloat(i.size);
+  var hiMeta=i.risk==='meta';
+  if(i.lesion==='cyst') return {rec:'Simple hepatic cyst — no follow-up required',rat:'Anechoic, imperceptible wall, homogeneous water attenuation (≤20HU post-contrast), no enhancement. Definitively benign.',lvl:'low',fu:[],note:'If <1cm and CT features inconclusive, MRI is superior for definitive cyst characterisation.',ref:REF};
+  if(i.lesion==='hemangioma'){
+    if(!isNaN(sz)&&sz>3) return {rec:'Haemangioma >3cm — MRI for confirmation, then discharge',rat:'Larger haemangiomas may show atypical enhancement (thrombosis, fibrosis, cystic degeneration). MRI with gadolinium confirms the diagnosis; no further follow-up once confirmed.',lvl:'low',fu:['MRI liver (gadolinium-enhanced): single examination','Discharge once confirmed — no further imaging'],ref:REF};
+    return {rec:'Haemangioma (typical features) — no follow-up required',rat:'Typical haemangioma: peripheral nodular arterial enhancement with centripetal fill-in; isodense or hyperdense on portal venous phase. Definitively benign once confirmed.',lvl:'low',fu:[],ref:REF};
+  }
+  if(i.lesion==='fnh'){
+    if(i.subcap==='yes') return {rec:'FNH ≥3cm or subcapsular — MRI with hepatobiliary agent to exclude adenoma',rat:'FNH >3cm or subcapsular location: differentiation from hepatocellular adenoma is clinically important. MRI with gadoxetate disodium (Primovist/Eovist) is advised.',lvl:'mod',fu:['MRI liver with hepatobiliary contrast agent (gadoxetate disodium)','MDT discussion if adenoma not confidently excluded'],note:'FNH: arterial hyperenhancement, portal venous isointensity, central scar, hepatobiliary uptake. Adenoma: heterogeneous, subtype characterisation on MRI determines management.',ref:REF};
+    return {rec:'FNH (typical features) — no follow-up required',rat:'FNH is benign. Classic MRI: arterial hyperenhancement, portal venous isointensity, central scar, hepatobiliary phase uptake (gadoxetate). No follow-up once confidently diagnosed.',lvl:'low',fu:['Advise: oestrogen-containing OCP associated with small growth risk — discuss cessation if applicable'],ref:REF};
+  }
+  if(i.lesion==='perf') return {rec:'Perfusional change / focal fatty sparing — no follow-up required',rat:'Characteristic locations and enhancement features enable definitive characterisation. Definitively benign. No follow-up required.',lvl:'low',fu:[],ref:REF};
+  if(i.lesion==='adenoma'){
+    if(isNaN(sz)) return {rec:'Enter lesion size — adenoma management is size-dependent',rat:'Hepatocellular adenoma: MRI with hepatobiliary agent required for subtype characterisation regardless of size.',lvl:'mod',fu:['MRI liver with hepatobiliary agent (gadoxetate disodium)'],ref:REF};
+    if(sz>=5) return {rec:'Hepatocellular adenoma ≥5cm — hepatobiliary MDT; surgical referral',rat:'Adenoma ≥5cm: significant risk of spontaneous haemorrhage and malignant transformation (especially β-catenin-activated subtype). MDT required; resection usually recommended.',lvl:'high',fu:['MRI liver with hepatobiliary agent (gadoxetate) — urgent subtype characterisation','Hepatobiliary MDT discussion','Surgical referral','Advise: cease OCP / anabolic steroids immediately'],ref:REF};
+    return {rec:'Hepatocellular adenoma <5cm — MRI, cease causative agents, surveillance',rat:'Adenoma <5cm: MRI with gadoxetate for subtype characterisation. Cessation of OCP/anabolic steroids — many regress. Surveillance MRI required.',lvl:'mod',fu:['MRI liver with hepatobiliary agent (gadoxetate): subtype characterisation','Advise: cease OCP / anabolic steroids','Surveillance MRI at 6 months post-cessation, then annually','Hepatobiliary MDT if growth or β-catenin-activated subtype suspected'],ref:REF};
+  }
+  if(i.lesion==='flash') return {rec:'Flash-filling lesion — MRI in 3–6 months',rat:'Uniform arterial hyperenhancement without further characterisation on available phases. Differential: haemangioma, FNH, HCC, metastasis. MRI required for definitive diagnosis.',lvl:'mod',fu:['MRI liver (multiphase ± hepatobiliary contrast): 3–6 months'],note:'If additional postcontrast phases available and lesion can be classified as haemangioma or FNH, use those categories instead.',ref:REF};
+  if(i.lesion==='indeterminate'){
+    if(isNaN(sz)) return null;
+    if(hiMeta){
+      if(sz<1) return {rec:'Indeterminate <1cm, known malignancy — short-interval CT or MRI',rat:'Known extrahepatic malignancy with liver metastasis propensity: even small indeterminate lesions warrant follow-up imaging.',lvl:'high',fu:['MRI liver or short-interval CT: within 3 months','Reassess at next oncology surveillance imaging'],ref:REF};
+      return {rec:'Indeterminate ≥1cm, known malignancy — prompt MRI or biopsy; oncology MDT',rat:'Known malignancy: indeterminate lesion ≥1cm requires prompt characterisation. MRI or biopsy; oncology MDT.',lvl:'high',fu:['Prompt MRI liver (multiphase + hepatobiliary contrast)','Consider CT-guided biopsy if MRI indeterminate','Oncology MDT discussion'],ref:REF};
+    }
+    if(sz<1) return {rec:'Indeterminate <1cm, low-risk — no follow-up required',rat:'ACR WP 2017: indeterminate lesions <1cm in low-risk patients (no known malignancy, no hepatic risk factors) do not require follow-up. Accurate CT characterisation is unreliable at this size.',lvl:'low',fu:[],ref:REF};
+    if(sz<=1.5) return {rec:'Indeterminate 1–1.5cm, low-risk — MRI in 3–6 months',rat:'Lesion 1–1.5cm without definite benign features in a low-risk patient: MRI for characterisation. Discharge if benign features confirmed.',lvl:'mod',fu:['MRI liver (multiphase ± hepatobiliary contrast): 3–6 months','Discharge if benign features confirmed','MDT if remains indeterminate on MRI'],ref:REF};
+    return {rec:'Indeterminate >1.5cm, low-risk — prompt MRI; consider biopsy',rat:'ACR WP 2017: indeterminate lesions >1.5cm without definite benign features should at least undergo prompt MRI. Direct biopsy may be appropriate in some scenarios.',lvl:'high',fu:['Prompt MRI liver (multiphase + hepatobiliary contrast)','Consider biopsy if MRI remains indeterminate','MDT discussion if malignancy suspected'],ref:REF};
+  }
+  if(i.lesion==='suspicious'){
+    if(hiMeta) return {rec:'Suspicious lesion, known malignancy — prompt MRI or biopsy; oncology MDT',rat:'Suspicious hepatic lesion in patient with known extrahepatic malignancy: likely metastasis. Prompt workup and oncology MDT.',lvl:'high',fu:['Prompt MRI liver or CT-guided biopsy','Oncology MDT discussion','Consider staging CT'],ref:REF};
+    return {rec:'Suspicious lesion, low-risk — prompt MRI; consider biopsy',rat:'Suspicious features (ill-defined margin, heterogeneous attenuation, enhancement >20HU, arterial enhancement + washout) require prompt further evaluation even in low-risk patients.',lvl:'high',fu:['Prompt MRI liver (multiphase + hepatobiliary contrast)','Consider biopsy if MRI remains indeterminate','MDT discussion'],ref:REF};
+  }
+  return null;
 }
 function cPancreas(i){
-  var sz=parseFloat(i.size);if(isNaN(sz))return null;
-  var worrisome=i.worrisome||[],highRisk=i.highRisk||[],ipmType=i.ipmType||'bd';
+  var ipmType=i.ipmType||'bd';
   var REF='IAP Kyoto Guidelines 2024 — Pancreatology 24(2):255';
   if(ipmType==='md'||ipmType==='mixed')return{rec:'Main Duct / Mixed IPMN — surgical referral recommended',rat:'MD-IPMN (MPD dilation >5mm) carries ~62% HGD/IC rate. Kyoto 2024 recommends surgical resection in fit patients.',lvl:'high',fu:['Urgent HPB surgery referral','EUS/CE-EUS for characterisation','MDT (pancreatology + HPB surgery)'],ref:REF};
+  var sz=parseFloat(i.size);if(isNaN(sz))return null;
+  var worrisome=i.worrisome||[],highRisk=i.highRisk||[];
   if(highRisk.length>0)return{rec:'High-risk stigmata — surgical referral',rat:'HRS: '+highRisk.join('; ')+'. Each additional HRS increases HGD/IC likelihood.',lvl:'high',fu:['Urgent HPB surgery referral','EUS/CE-EUS','MDT (pancreatology + HPB surgery)'],ref:REF};
   if(worrisome.length>0){var n=worrisome.length;return{rec:'Worrisome feature'+(n>1?'s':'')+' — EUS recommended; MDT',rat:(n>1?n+' WF':'WF')+': '+worrisome.join('; ')+'. Multiple WF increase HGD/IC risk.',lvl:'high',fu:['EUS (±CE-EUS) — experienced centre','EUS-FNA for cyst fluid markers if appropriate','MDT (pancreatology + HPB surgery)','Surgical referral if EUS confirms HRS or positive cytology'],note:n>1?'⚠️ '+n+' worrisome features — Kyoto 2024: consider nomogram-based surgical assessment.':'',ref:REF};}
   var szMm=sz*10,rec,rat,lvl,fu,note='';
@@ -285,10 +318,20 @@ function cLungRADS(i){
 }
 var CALC={pulm:cPulm,adrenal:cAdrenal,renal:cRenal,liver:cLiver,pancreas:cPancreas,birads:cBIRADS,lirads:cLIRADS,tirads:cTIRADS,cadrads:cCADRADS,lungrads:cLungRADS};
 // ── FORM BUILDERS
-function sel(k,label,opts,val){var o=opts.map(function(x){return'<option value="'+x.v+'"'+(val===x.v?' selected':'')+'>'+x.l+'</option>';}).join('');return'<div class="field"><label class="field-label">'+label+'</label><select onchange="upd(\''+k+'\',this.value)"><option value="">— select —</option>'+o+'</select></div>';}
-function num(k,label,ph,unit,val){return'<div class="field"><label class="field-label">'+label+(unit?'<span class="unit"> ('+unit+')</span>':'')+'</label><input type="number" placeholder="'+ph+'" value="'+(val||'')+'" oninput="upd(\''+k+'\',this.value)"></div>';}
+function sel(k,label,opts,val){var o=opts.map(function(x){return'<option value="'+x.v+'"'+(val===x.v?' selected':'')+'>'+x.l+'</option>';}).join('');return'<div class="field"><label class="field-label">'+label+'</label><select onchange="updSelect(\''+k+'\',this.value)"><option value="">— select —</option>'+o+'</select></div>';}
+function num(k,label,ph,unit,val){return'<div class="field"><label class="field-label">'+label+(unit?'<span class="unit"> ('+unit+')</span>':'')+'</label><input type="number" step="any" placeholder="'+ph+'" value="'+(val||'')+'" oninput="upd(\''+k+'\',this.value)"></div>';}
 function chks(k,label,opts,sel2,col){col=col||'#06b6d4';var items=opts.map(function(o){var chk=(sel2||[]).indexOf(o.v)>=0;return'<div class="chk-item" onclick="tog(\''+k+'\',\''+o.v+'\')"><div class="chk-box'+(chk?' checked':'')+'" style="'+(chk?'background:'+col+';border-color:'+col:'')+'">'+(chk?'<svg viewBox="0 0 10 10" width="9" height="9"><path d="M1.5 5L4 7.5 8.5 2.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':'')+'</div><span class="chk-lbl">'+o.l+'</span></div>';}).join('');return'<div class="chk-grp"><label class="field-label">'+label+'</label>'+items+'</div>';}
 function info(html){return'<div class="info-box">'+html+'</div>';}
+function bosCard(cat,col,risk,title,feats){
+  return '<div style="border:1px solid '+col+'50;border-left:3px solid '+col+';border-radius:0 7px 7px 0;padding:9px 11px;margin-bottom:6px;background:rgba(0,0,0,0.18)">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+    +'<span style="font-family:monospace;font-weight:700;font-size:13px;color:'+col+'">'+cat+'</span>'
+    +'<span style="font-size:11px;font-weight:600;color:#94a3b8">'+title+'</span>'
+    +'<span style="margin-left:auto;font-size:10px;font-family:monospace;background:'+col+'22;color:'+col+';padding:1px 7px;border-radius:4px;white-space:nowrap">'+risk+'</span>'
+    +'</div>'
+    +feats.map(function(f){return'<div style="font-size:11px;color:#4a6080;line-height:1.5;padding-left:2px">· '+f+'</div>';}).join('')
+    +'</div>';
+}
 function getFormHTML(id){
   var i=S.inp;
   var $s=function(k,l,o){return sel(k,l,o,i[k]);};
@@ -296,8 +339,41 @@ function getFormHTML(id){
   var $c=function(k,l,o,c){return chks(k,l,o,i[k],c);};
   if(id==='pulm')return $s('type','Nodule Type',[{v:'solid',l:'Solid'},{v:'ggo',l:'Pure Ground Glass (GGO)'},{v:'partsolid',l:'Part-solid (mixed GGO + solid)'}])+$n('size','Largest dimension','e.g. 7','mm')+(i.type==='partsolid'?$n('solidComp','Solid component size','e.g. 5','mm'):'')+$s('multiple','Number of nodules',[{v:'single',l:'Single'},{v:'multi',l:'Multiple (enter dominant)'}])+(i.type==='solid'?$s('risk','Patient risk profile',[{v:'low',l:'Low risk — <1 major risk factor'},{v:'high',l:'High risk — ≥1 of: smoking, emphysema, family Hx, upper lobe'}]):'');
   if(id==='adrenal')return $n('size','Lesion size','e.g. 2.5','cm')+$n('hu','Unenhanced CT density','leave blank if unavailable','HU')+$s('macrofat','Macroscopic fat?',[{v:'no',l:'No'},{v:'yes',l:'Yes — macroscopic fat present (myelolipoma)'}])+$s('history','Known extra-adrenal malignancy?',[{v:'no',l:'No'},{v:'yes',l:'Yes'}]);
-  if(id==='renal')return info('<b style="color:#7eb0d4">Bosniak 2019:</b> I: simple · II: minimal · IIF: moderate · III: indeterminate · IV: malignant')+$s('bosniak','Bosniak Category (ACR 2019)',[{v:'I',l:'I — Simple'},{v:'II',l:'II — Minimally complex'},{v:'IIF',l:'IIF — Moderately complex'},{v:'III',l:'III — Indeterminate'},{v:'IV',l:'IV — Clearly malignant'}])+$n('size','Cyst size','e.g. 3.5','cm');
-  if(id==='liver')return $s('malignancy','Known malignancy / cirrhosis / HCC risk?',[{v:'no',l:'No'},{v:'yes',l:'Yes → use LI-RADS tab'}])+$s('lesionType','Lesion characterisation',[{v:'cyst',l:'Simple hepatic cyst'},{v:'hemangioma',l:'Haemangioma (typical features)'},{v:'fnh',l:'Focal Nodular Hyperplasia (FNH)'},{v:'indeterminate',l:'Indeterminate / uncharacterised'}])+$n('size','Lesion size','e.g. 1.2','cm');
+  if(id==='renal'){
+    var bosRef='<div style="margin-bottom:14px">'
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4a6080;margin-bottom:8px">Bosniak v2019 (ACR) — Classification Reference</div>'
+      +bosCard('I',   '#10b981','Malignancy ~0%',   'Simple cyst',        ['Hairline-thin wall (≤2mm), imperceptibly smooth','No septa, calcification, or solid component','Water attenuation (HU −9 to +20 unenhanced CT)','No enhancement on any phase'])
+      +bosCard('II',  '#34d399','Malignancy ~0%',   'Minimally complex',  ['≤2 hairline-thin smooth septa (CT) / ≤4 septa (MRI)','Fine calcification (≤1mm) or short segment of slightly thickened Ca²⁺','No measurable contrast enhancement','OR: homogeneous high attenuation (HU ≥70, cyst <3cm, unenhanced CT)'])
+      +bosCard('IIF', '#f59e0b','Malignancy ~5%',   'Moderately complex', ['≥3 hairline-thin septa; or minimal smooth thickening of wall/septa','Nodular calcification without measurable enhancement','Perceptible (not measurable) enhancement of septa or wall','OR: high-attenuation cyst ≥3cm on unenhanced CT','Follow-up required to confirm stability'])
+      +bosCard('III', '#f97316','Malignancy 40–60%','Indeterminate',      ['Thick (>2mm) or irregular septa or wall','Measurable enhancement (≥15HU increase; or clear MRI enhancement)','No discrete soft-tissue component independent of septa/wall','Urology referral; surgery or active surveillance'])
+      +bosCard('IV',  '#ef4444','Malignancy >85%',  'Clearly malignant',  ['Enhancing soft-tissue components beyond septa/wall','Enhancement clearly independent of wall or septum (i.e. a mass)','Does not need to have cystic components on imaging','Surgical resection recommended in fit patients'])
+      +'</div>';
+    return bosRef+$s('bosniak','Select Bosniak Category',[{v:'I',l:'I — Simple cyst'},{v:'II',l:'II — Minimally complex'},{v:'IIF',l:'IIF — Moderately complex'},{v:'III',l:'III — Indeterminate (thick/irregular enhancing septa)'},{v:'IV',l:'IV — Clearly malignant (enhancing soft-tissue component)'}]);
+  }
+  if(id==='liver'){
+    var h='';
+    h+=$s('risk','Patient risk category',[
+      {v:'low', l:'Low-risk — no known malignancy, no liver disease or HCC risk factors'},
+      {v:'meta',l:'Known extrahepatic malignancy (risk of hepatic metastases)'},
+      {v:'hcc', l:'HCC risk — cirrhosis / chronic HBV / prior HCC \u2192 use LI-RADS tab'},
+    ]);
+    if(i.risk&&i.risk!=='hcc'){
+      h+=$s('lesion','Lesion characterisation',[
+        {v:'cyst',         l:'Simple hepatic cyst'},
+        {v:'hemangioma',   l:'Haemangioma — typical enhancement features present'},
+        {v:'fnh',          l:'Focal Nodular Hyperplasia (FNH) — typical features present'},
+        {v:'perf',         l:'Perfusional change / focal fatty sparing or deposition'},
+        {v:'adenoma',      l:'Hepatocellular adenoma (suspected — young woman, OCP/steroid use)'},
+        {v:'flash',        l:'Flash-filling — uniform arterial enhancement only, cannot further classify'},
+        {v:'indeterminate',l:'Indeterminate — no definitive benign or suspicious features'},
+        {v:'suspicious',   l:'Suspicious — ill-defined margin / heterogeneous / arterial + washout'},
+      ]);
+      var needsSz=['hemangioma','fnh','adenoma','indeterminate','suspicious'];
+      if(needsSz.indexOf(i.lesion)>=0) h+=$n('size','Lesion size','e.g. 1.5','cm');
+      if(i.lesion==='fnh') h+=$s('subcap','Lesion \u22653cm or subcapsular location?',[{v:'no',l:'No \u2014 <3cm and not subcapsular'},{v:'yes',l:'Yes \u2014 \u22653cm or subcapsular (adenoma must be excluded)'}]);
+    }
+    return h;
+  }
   if(id==='pancreas')return info('<b style="color:#38bdf8">Kyoto 2024 (IAP):</b> Updated growth threshold (≥2.5mm/year), expanded WF list, EUS/CE-EUS formally included, simplified surveillance intervals.')+$s('ipmType','IPMN Type',[{v:'bd',l:'Branch Duct IPMN — cyst >5mm communicating with MPD'},{v:'md',l:'Main Duct IPMN — MPD dilation >5mm without obstruction'},{v:'mixed',l:'Mixed IPMN — meets criteria for both BD and MD'}])+(!i.ipmType||i.ipmType==='bd'?$n('size','Cyst maximum dimension','e.g. 2.5','cm')+$c('highRisk','🔴 High-risk stigmata — any = surgical referral',[{v:'jaundice',l:'Obstructive jaundice attributable to cyst'},{v:'enhNode',l:'Enhancing mural nodule ≥5mm (CT/MRI or CE-EUS confirmed)'},{v:'mpd10',l:'Main pancreatic duct ≥10mm'},{v:'cytology',l:'Positive cytology for HGD or invasive carcinoma (EUS-FNA)'}],'#ef4444')+$c('worrisome','🟡 Worrisome features — any = EUS + MDT',[{v:'cyst30',l:'Cyst ≥30mm'},{v:'mpd5',l:'Main pancreatic duct 5–9mm'},{v:'mural',l:'Enhancing mural nodule <5mm or non-enhancing nodule'},{v:'thick',l:'Thickened or enhancing cyst walls'},{v:'growth',l:'Cyst growth ≥2.5mm/year (Kyoto 2024)'},{v:'abrupt',l:'Abrupt MPD calibre change with upstream pancreatic atrophy'},{v:'lymph',l:'Lymphadenopathy'},{v:'ca199',l:'Elevated serum CA 19-9'},{v:'dm',l:'New-onset diabetes mellitus'},{v:'pancreatitis',l:'Acute pancreatitis attributable to IPMN'}],'#f59e0b'):'');
   if(id==='birads')return $s('ft','Finding Type',[{v:'normal',l:'Normal'},{v:'benign',l:'Definitively benign'},{v:'mass',l:'Mass'},{v:'calcifications',l:'Calcifications'},{v:'asymmetry',l:'Asymmetry'},{v:'distortion',l:'Architectural distortion'}])+(i.ft==='mass'?$s('shape','Mass Shape',[{v:'oval',l:'Oval or round'},{v:'lobular',l:'Lobular'},{v:'irregular',l:'Irregular'}])+$s('margin','Mass Margin',[{v:'circumscribed',l:'Circumscribed'},{v:'obscured',l:'Obscured'},{v:'microlobulated',l:'Microlobulated'},{v:'indistinct',l:'Indistinct'},{v:'spiculated',l:'Spiculated'}])+$s('density','Density',[{v:'fat',l:'Fat-containing'},{v:'low',l:'Low'},{v:'equal',l:'Equal'},{v:'high',l:'High'}])+$s('assoc','Associated features?',[{v:'no',l:'None'},{v:'yes',l:'Yes (skin / nipple / adenopathy)'}])+$s('multiple','Multiple bilateral?',[{v:'no',l:'No / single'},{v:'bilateral',l:'Multiple bilateral circumscribed masses'}]):'')+( i.ft==='calcifications'?$s('calcType','Calcification Morphology',[{v:'benign',l:'Definitively benign'},{v:'typically_benign',l:'Typically benign'},{v:'amorphous',l:'Amorphous (suspicious)'},{v:'coarse_het',l:'Coarse heterogeneous'},{v:'fine_pleo',l:'Fine pleomorphic'},{v:'fine_linear',l:'Fine linear / branching'}]):'')+( i.ft==='asymmetry'?$s('asymType','Asymmetry Type',[{v:'global',l:'Global'},{v:'focal',l:'Focal'},{v:'developing',l:'Developing'}]):'');
   if(id==='lirads')return info('<b style="color:#f59e0b">Note:</b> LI-RADS applies to at-risk patients only (cirrhosis, chronic HBV, prior HCC).')+$s('atrisk','At-risk patient?',[{v:'yes',l:'Yes — cirrhosis / chronic HBV / prior HCC'},{v:'no',l:'No (use Liver Incidentaloma tab)'}])+(i.atrisk==='yes'?$n('size','Observation size','e.g. 15','mm')+$s('benign','Definitively benign?',[{v:'no',l:'No'},{v:'yes',l:'Yes — cyst / haemangioma / FNH (LR-1)'}])+(i.benign!=='yes'?$s('tiv','Tumour in vein?',[{v:'no',l:'No'},{v:'yes',l:'Yes (LR-TIV)'}])+$s('lrm','LR-M features?',[{v:'no',l:'No'},{v:'yes',l:'Yes — features suggest non-HCC malignancy'}])+(i.tiv!=='yes'&&i.lrm!=='yes'?$s('aphe','APHE (non-rim)?',[{v:'no',l:'No'},{v:'yes',l:'Yes'}])+$s('washout','Washout appearance?',[{v:'no',l:'No'},{v:'yes',l:'Yes'}])+$s('capsule','Enhancing capsule?',[{v:'no',l:'No'},{v:'yes',l:'Yes'}])+$s('growth','Threshold growth (≥50% in <6 months)?',[{v:'no',l:'No'},{v:'yes',l:'Yes'}]):''):''):'');
@@ -336,6 +412,13 @@ function render(){
   document.getElementById('sec-lbl').textContent=slbl;document.getElementById('sec-lbl').style.color=col;
   document.getElementById('sec-ref').textContent=sref;
   document.getElementById('form-card').innerHTML=getFormHTML(tabId);
+  renderResult();
+}
+// Result-only render — called by number inputs so typing is never interrupted
+function renderResult(){
+  var tabId=getTabId();
+  var sec=SECS.find(function(x){return x.id===S.main;});
+  var col=sec?sec.col:'#06b6d4';
   var calc=CALC[tabId];var result=calc?calc(S.inp):null;
   var rc=document.getElementById('res-card'),ph=document.getElementById('placeholder');
   if(result){rc.innerHTML='<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2d5075;margin-bottom:14px">Auto-updated Recommendation</div>'+resultHTML(result);rc.style.display='block';rc.style.borderColor=col+'30';ph.style.display='none';}
@@ -343,7 +426,8 @@ function render(){
 }
 function setMain(id){S.main=id;S.inp={};render();}
 function setSub(id){S.sub=id;S.inp={};render();}
-function upd(k,v){S.inp[k]=v;render();}
+function upd(k,v){S.inp[k]=v;renderResult();}          // number inputs: result only, no form re-render
+function updSelect(k,v){S.inp[k]=v;render();}           // selects: full re-render (shows/hides conditional fields)
 function tog(k,v){var c=S.inp[k]||[],s=c.slice();var idx=s.indexOf(v);if(idx>=0)s.splice(idx,1);else s.push(v);S.inp[k]=s;render();}
 render();
 
