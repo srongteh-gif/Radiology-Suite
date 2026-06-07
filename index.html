@@ -178,17 +178,54 @@ function cPulm(i){
   return{rec:rec,rat:rat,lvl:lvl,fu:fu,note:note,ref:'Fleischner Society 2017 — Radiology 284:228–243'};
 }
 function cAdrenal(i){
-  var sz=parseFloat(i.size),hu=parseFloat(i.hu);if(isNaN(sz))return null;
-  var bio=['1mg overnight dexamethasone suppression test (cortisol excess)','Plasma free metanephrines or 24h urine metanephrines (phaeochromocytoma)','Aldosterone : renin ratio if hypertensive (hyperaldosteronism)'];
-  if(i.macrofat==='yes')return{rec:'Myelolipoma — no imaging follow-up',rat:'Macroscopic fat confirms myelolipoma (benign). Complete biochemical workup.',lvl:'low',fu:[],bio:bio,ref:'ACR Incidental Findings WP — JACR 2021;18(9):1325'};
-  if(i.history==='yes')return{rec:'PET-CT or MRI; exclude phaeochromocytoma before biopsy',rat:'Known extra-adrenal malignancy: adrenal metastasis must be excluded.',lvl:'high',fu:['PET-CT or adrenal MRI','Biochemical exclusion of phaeochromocytoma before biopsy','MDT discussion'],bio:bio,ref:'ACR Incidental Findings WP — JACR 2021;18(9):1325'};
-  if(sz<1)return{rec:'No imaging follow-up required',rat:'<1cm — below threshold. Complete biochemical workup.',lvl:'low',fu:[],bio:bio,ref:'ACR Incidental Findings WP — JACR 2021;18(9):1325'};
-  if(sz>=6)return{rec:'Surgical resection — refer urgently',rat:'≥6cm: significant adrenocortical carcinoma risk.',lvl:'high',fu:['Urgent endocrine/urological surgery referral','Biochemical workup urgently','Staging CT chest/abdomen/pelvis'],bio:bio,ref:'ACR Incidental Findings WP — JACR 2021;18(9):1325'};
-  if(sz>=4)return{rec:'Consider adrenalectomy — MDT (endocrinology + surgery)',rat:'4–6cm: malignancy risk rises with size.',lvl:'high',fu:['MDT (endocrinology + surgery)','Adrenal MRI if not done','Biochemical workup'],bio:bio,ref:'ACR Incidental Findings WP — JACR 2021;18(9):1325'};
-  var rec,rat,lvl,fu=[];
-  if(!isNaN(hu)){if(hu<=10){rec='Lipid-rich adenoma — no imaging follow-up';rat='HU '+hu+' confirms lipid-rich adenoma.';lvl='low';}else if(hu<=30){rec='Indeterminate — MRI (chemical shift) or adrenal washout CT';rat='HU '+hu+': indeterminate. APW ≥60% or RPW ≥40% = adenoma.';lvl='mod';fu=['MRI adrenals (in/out-of-phase chemical shift)','OR: Adrenal washout CT (15-min delay)','Biochemical workup'];}else{rec='Indeterminate (lipid-poor) — MRI or PET-CT; MDT';rat='HU '+hu+' makes lipid-rich adenoma unlikely.';lvl='high';fu=['MRI adrenals or PET-CT','Biochemical workup','MDT discussion'];}}
-  else{rec='HU unavailable — MRI chemical shift recommended';rat='Without unenhanced CT density, adenoma cannot be confirmed.';lvl='mod';fu=['Adrenal MRI (in/out-of-phase)','Biochemical workup'];}
-  return{rec:rec,rat:rat,lvl:lvl,fu:fu,bio:bio,ref:'ACR Incidental Findings WP — JACR 2021;18(9):1325'};
+  var REF='ACR Incidental Adrenal Mass WP — JACR 2017;14(8):1038';
+  var bio=[
+    '1mg overnight dexamethasone suppression test (autonomous cortisol secretion)',
+    'Plasma free metanephrines or 24h urine metanephrines (phaeochromocytoma)',
+    'Aldosterone : renin ratio if hypertensive (hyperaldosteronism)'
+  ];
+  // ── DIAGNOSTIC BENIGN FEATURES ──────────────────────────────────────────
+  var bf=i.benignFeature;
+  if(bf&&bf!=='none'){
+    var bmap={
+      myelolipoma:   {rec:'Myelolipoma — no imaging follow-up',                    rat:'Macroscopic fat is diagnostic of myelolipoma. Definitively benign. Biochemical workup still required.'},
+      noEnhancement: {rec:'No enhancement — cyst or haemorrhage, no follow-up',    rat:'Absent enhancement on paired pre- and post-contrast CT = cyst or haemorrhage. Definitively benign.'},
+      calcification: {rec:'Benign calcification — no imaging follow-up',            rat:'Benign-appearing calcification without soft-tissue component. Definitively benign.'},
+      tenHU:         {rec:'Lipid-rich adenoma (≤10 HU NCCT) — no imaging follow-up', rat:'≤10 HU on unenhanced CT confirms lipid-rich adenoma by density criteria. Definitively benign. Biochemical workup still required.'},
+      csMRI:         {rec:'Adenoma on chemical shift MRI — no imaging follow-up',   rat:'Signal dropout on out-of-phase sequence confirms intracellular lipid = adenoma. Definitively benign. Biochemical workup still required.'},
+    };
+    var bm=bmap[bf]; if(!bm)return null;
+    return{rec:bm.rec,rat:bm.rat,lvl:'low',fu:[],bio:bio,ref:REF};
+  }
+  // ── INDETERMINATE ────────────────────────────────────────────────────────
+  if(!bf||!i.sizeRange) return null;
+  if(!i.cancerHx) return null;
+  var cancer=i.cancerHx==='yes';
+  var sz1to2=i.sizeRange==='1to2', sz2to4=i.sizeRange==='2to4', szGe4=i.sizeRange==='ge4';
+  // ≥4cm
+  if(szGe4){
+    if(cancer) return{rec:'≥4cm with cancer history — consider biopsy or PET-CT; exclude phaeochromocytoma first',rat:'≥4cm indeterminate adrenal mass with cancer history: adrenal metastasis must be excluded. Biochemical exclusion of phaeochromocytoma mandatory before biopsy.',lvl:'high',fu:['Biochemical exclusion of phaeochromocytoma before biopsy','PET-CT or adrenal protocol CT','Image-guided biopsy once phaeochromocytoma excluded','MDT (endocrinology + oncology)'],bio:bio,ref:REF};
+    return{rec:'≥4cm, no cancer history — consider surgical resection; exclude phaeochromocytoma first',rat:'≥4cm indeterminate adrenal mass without cancer history: risk of adrenocortical carcinoma warrants surgical consideration per ACR 2017. Biochemical workup required before surgery.',lvl:'high',fu:['Complete biochemical workup (phaeochromocytoma exclusion essential before surgery)','Endocrine surgery / MDT referral','Adrenal protocol CT if not already performed'],bio:bio,ref:REF};
+  }
+  // 1–<4cm: need prior imaging answer
+  if(!i.priorImaging) return null;
+  if(i.priorImaging==='stable') return{rec:'Stable ≥1 year on prior imaging — benign, no imaging follow-up',rat:'An adrenal mass stable on prior imaging for ≥1 year is considered benign per ACR 2017. No further imaging follow-up required. Biochemical workup still required.',lvl:'low',fu:[],bio:bio,ref:REF};
+  if(i.priorImaging==='enlarging'){
+    if(cancer) return{rec:'New or enlarging with cancer history — consider biopsy or PET-CT',rat:'Growth on prior imaging with cancer history: concern for adrenal metastasis. Exclude phaeochromocytoma before biopsy.',lvl:'high',fu:['Biochemical exclusion of phaeochromocytoma before biopsy','PET-CT or image-guided biopsy','MDT (endocrinology + oncology)'],bio:bio,ref:REF};
+    return{rec:'New or enlarging, no cancer history — consider follow-up adrenal CT or resection',rat:'Growth on prior imaging raises concern for malignancy. Options: adrenal protocol CT at shorter interval or surgical resection, guided by biochemical results and clinical context.',lvl:'high',fu:['Complete biochemical workup','Consider adrenal protocol CT or surgical referral','MDT (endocrinology + surgery)'],bio:bio,ref:REF};
+  }
+  // No prior imaging
+  if(sz1to2&&!cancer) return{rec:'1–2cm, no prior imaging — probably benign; consider 12-month follow-up adrenal CT',rat:'1–2cm indeterminate adrenal mass without prior imaging: probably benign per ACR 2017. Consider 12-month follow-up adrenal CT (or chemical shift MRI). Biochemical workup required.',lvl:'mod',fu:['Complete biochemical workup','Follow-up adrenal protocol CT at 12 months','OR: Chemical shift MRI as alternative'],bio:bio,ref:REF};
+  // >2–<4cm (or 1–2cm with cancer Hx), no prior imaging → adrenal protocol CT pathway
+  if(!i.ncctResult) return null;
+  if(i.ncctResult==='notDone') return{rec:(sz1to2?'1–2cm with cancer history':'2–4cm')+', no prior imaging — adrenal protocol CT required',rat:'Indeterminate adrenal mass requiring characterisation. Adrenal protocol CT (unenhanced + portal venous + 15-min delayed) provides NCCT HU and washout data in a single study.',lvl:'mod',fu:['Adrenal protocol CT (unenhanced + 60s portal venous + 15-min delayed)','OR: Chemical shift MRI as alternative','Complete biochemical workup'],bio:bio,ref:REF};
+  if(i.ncctResult==='le10') return{rec:'Lipid-rich adenoma (NCCT ≤10 HU) — no imaging follow-up',rat:'NCCT ≤10 HU confirms lipid-rich adenoma by density criteria. Definitively benign. Biochemical workup still required.',lvl:'low',fu:[],bio:bio,ref:REF};
+  // NCCT >10 HU — need washout
+  if(!i.washout||i.washout==='notDone') return{rec:'NCCT >10 HU — adrenal washout CT required',rat:'NCCT >10 HU: lipid-rich adenoma not confirmed by density alone. Adrenal washout CT (15-min delayed phase) required to calculate APW and RPW.',lvl:'mod',fu:['Adrenal washout CT — 15-min delayed phase','APW = (HU_enh − HU_del) ÷ (HU_enh − HU_pre) × 100  →  ≥60% = adenoma','RPW = (HU_enh − HU_del) ÷ HU_enh × 100  →  ≥40% = adenoma','Complete biochemical workup'],bio:bio,ref:REF};
+  if(i.washout==='noEnhancement') return{rec:'No enhancement on washout CT — cyst or haemorrhage, no follow-up',rat:'Absent enhancement (<10 HU) on washout CT = cyst or haemorrhage. Definitively benign.',lvl:'low',fu:[],bio:bio,ref:REF};
+  if(i.washout==='positive') return{rec:'Adenoma confirmed (APW ≥60% or RPW ≥40%) — no imaging follow-up',rat:'Washout criteria met: lipid-poor adenoma confirmed. Definitively benign. Biochemical workup still required.',lvl:'low',fu:[],bio:bio,ref:REF};
+  if(i.washout==='negative') return{rec:'Indeterminate washout (APW <60% and RPW <40%) — MDT; imaging F/U, biopsy, PET-CT, or resection per clinical scenario',rat:'Washout criteria not met: adenoma not confirmed. Management guided by clinical context. Phaeochromocytoma must be excluded before biopsy or resection.',lvl:'high',fu:['Biochemical exclusion of phaeochromocytoma before biopsy or resection','MDT (endocrinology + surgery)','Options: imaging follow-up, image-guided biopsy, PET-CT, or surgical resection'],bio:bio,ref:REF};
+  return null;
 }
 function cRenal(i){
   if(!i.bosniak)return null;
@@ -364,7 +401,56 @@ function getFormHTML(id){
   var $n=function(k,l,p,u){return num(k,l,p,u,i[k]);};
   var $c=function(k,l,o,c){return chks(k,l,o,i[k],c);};
   if(id==='pulm')return $s('type','Nodule Type',[{v:'solid',l:'Solid'},{v:'ggo',l:'Pure Ground Glass (GGO)'},{v:'partsolid',l:'Part-solid (mixed GGO + solid)'}])+$n('size','Largest dimension','e.g. 7','mm')+(i.type==='partsolid'?$n('solidComp','Solid component size','e.g. 5','mm'):'')+$s('multiple','Number of nodules',[{v:'single',l:'Single'},{v:'multi',l:'Multiple (enter dominant)'}])+(i.type==='solid'?$s('risk','Patient risk profile',[{v:'low',l:'Low risk — <1 major risk factor'},{v:'high',l:'High risk — ≥1 of: smoking, emphysema, family Hx, upper lobe'}]):'');
-  if(id==='adrenal')return $n('size','Lesion size','e.g. 2.5','cm')+$n('hu','Unenhanced CT density','leave blank if unavailable','HU')+$s('macrofat','Macroscopic fat?',[{v:'no',l:'No'},{v:'yes',l:'Yes — macroscopic fat present (myelolipoma)'}])+$s('history','Known extra-adrenal malignancy?',[{v:'no',l:'No'},{v:'yes',l:'Yes'}]);
+  if(id==='adrenal'){
+    var h='';
+    h+=info('<b style="color:#38bdf8">ACR 2017:</b> Applies to incidental asymptomatic adrenal masses ≥1cm. Biochemical workup recommended for all. Exclude phaeochromocytoma before biopsy or surgery.');
+    h+=$s('benignFeature','Step 1 — Imaging features',[
+      {v:'none',         l:'Indeterminate — no diagnostic benign features identified'},
+      {v:'myelolipoma',  l:'Diagnostic benign — macroscopic fat (myelolipoma)'},
+      {v:'noEnhancement',l:'Diagnostic benign — no enhancement on paired pre- and post-contrast CT (cyst / haemorrhage)'},
+      {v:'calcification',l:'Diagnostic benign — benign calcification only, no soft-tissue component'},
+      {v:'tenHU',        l:'Diagnostic benign — ≤10 HU on unenhanced CT (lipid-rich adenoma)'},
+      {v:'csMRI',        l:'Diagnostic benign — signal dropout on out-of-phase chemical shift MRI (adenoma)'},
+    ]);
+    if(i.benignFeature==='none'){
+      h+=$s('sizeRange','Step 2 — Lesion size',[
+        {v:'1to2',l:'1–2 cm'},
+        {v:'2to4',l:'>2 to <4 cm'},
+        {v:'ge4', l:'≥4 cm'},
+      ]);
+      if(i.sizeRange){
+        h+=$s('cancerHx','Step 3 — Known cancer history (isolated adrenal mass — no other metastatic disease)?',[
+          {v:'no', l:'No known malignancy'},
+          {v:'yes',l:'Yes — known malignancy, isolated adrenal mass'},
+        ]);
+        if(i.cancerHx&&i.sizeRange!=='ge4'){
+          h+=$s('priorImaging','Step 4 — Prior imaging of this adrenal mass available?',[
+            {v:'none',     l:'No prior imaging available'},
+            {v:'stable',   l:'Yes — stable for ≥1 year on prior scan'},
+            {v:'enlarging',l:'Yes — new or enlarging compared to prior scan'},
+          ]);
+          var needsHU=i.priorImaging==='none'&&(i.sizeRange==='2to4'||(i.sizeRange==='1to2'&&i.cancerHx==='yes'));
+          if(needsHU){
+            h+=info('<b style="color:#f59e0b">ACR 2017 next step:</b> Adrenal protocol CT. Unenhanced phase → NCCT HU. If >10 HU → 15-min delayed phase for washout (APW/RPW). Select results below if already available.');
+            h+=$s('ncctResult','Step 5 — NCCT (unenhanced CT) result',[
+              {v:'notDone',l:'Not yet performed'},
+              {v:'le10',   l:'NCCT ≤10 HU — lipid-rich adenoma'},
+              {v:'gt10',   l:'NCCT >10 HU — indeterminate (washout CT required)'},
+            ]);
+            if(i.ncctResult==='gt10'){
+              h+=$s('washout','Step 6 — Adrenal washout CT result',[
+                {v:'notDone',      l:'Not yet performed'},
+                {v:'noEnhancement',l:'No enhancement (<10 HU) — cyst or haemorrhage'},
+                {v:'positive',     l:'APW ≥60% or RPW ≥40% — adenoma confirmed'},
+                {v:'negative',     l:'APW <60% and RPW <40% — indeterminate (adenoma not confirmed)'},
+              ]);
+            }
+          }
+        }
+      }
+    }
+    return h;
+  }
   if(id==='renal'){
     var bosRef='<div style="margin-bottom:14px">'
       +'<div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4a6080;margin-bottom:8px">Bosniak v2019 (ACR) — Classification Reference</div>'
