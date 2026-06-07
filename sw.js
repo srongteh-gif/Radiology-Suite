@@ -1,6 +1,6 @@
 // Radiology Decision Suite — Service Worker
 // Bump CACHE_VER whenever guidelines are updated to trigger auto-update
-const CACHE_VER = 'radsuite-2024.2';
+const CACHE_VER = 'radsuite-2024.3';
 const ASSETS   = ['./index.html', './manifest.json', './sw.js'];
 
 // ── INSTALL: cache all assets immediately ──────────────────────────────────
