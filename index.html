@@ -308,6 +308,7 @@ function cLIRADS(i){
   // ≥20mm + nonrim APHE
   if(add===0)return{cat:'LR-4',rat:'≥20mm ('+sz+'mm) with nonrim APHE, no additional major features. Probably HCC.',lvl:'high',fu:['Hepatology/HPB MDT','Consider biopsy or short-interval follow-up','Transplant assessment if appropriate'],ref:REF};
   return{cat:'LR-5',rat:'≥20mm ('+sz+'mm) with nonrim APHE + '+add+' additional major feature(s). ≥95% HCC probability. Biopsy not required for treatment.',lvl:'high',fu:['HCC treatment per local protocol (BCLC staging)','Urgent hepatology/HPB MDT','Transplant assessment if eligible'],ref:REF};
+}
 function cTIRADS(i){
   var sc=(TP.composition[i.composition]||0)+(TP.echogenicity[i.echogenicity]||0)+(TP.shape[i.shape]||0)+(TP.margin[i.margin]||0)+(TP.efoci[i.efoci]||0);
   if(!i.composition&&!i.echogenicity&&!i.shape&&!i.margin&&!i.efoci)return null;
